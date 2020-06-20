@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
+### Require out-of-source builds
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+if(EXISTS "${LOC_PATH}")
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+endif()
+
 # set the project name
 project(lsp_sandbox)
 
@@ -8,17 +14,11 @@ conan_basic_setup(TARGETS)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(TARGET_NAME lsp_ref)
 
-add_library(${TARGET_NAME} clangd_helper.cpp )
-set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 17)
+# add library sub directory
+add_subdirectory(src)
 
-target_link_libraries(${TARGET_NAME} PUBLIC CONAN_PKG::boost CONAN_PKG::nlohmann_json)
+# add apps used to test this library if any
+add_subdirectory(apps)
 
-# create the main executable that will be used for testing
-set(TARGET_NAME sandbox)
-
-add_executable(${TARGET_NAME} main.cpp)
-
-target_link_libraries(${TARGET_NAME} PRIVATE $<TARGET_FILE:lsp_ref> CONAN_PKG::boost)
 
