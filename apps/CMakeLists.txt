@@ -4,3 +4,6 @@ set(TARGET_NAME sandbox)
 add_executable(${TARGET_NAME} main.cpp)
 
 target_link_libraries(${TARGET_NAME} PRIVATE lspfs CONAN_PKG::boost)
+
+# Ouh nice we will parse our own project !! Inception time
+target_compile_definitions(${TARGET_NAME} PRIVATE "WORKINGDIRECTORY=\"${PROJECT_SOURCE_DIR}\"")

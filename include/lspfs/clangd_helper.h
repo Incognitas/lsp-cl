@@ -16,7 +16,12 @@ class ClangdHelper
 {
 public:
   ClangdHelper();
-
+  /**
+   * @brief Update working directory in which clangd can be launched when calling \ref ClangdHelper::startProcess()
+   *
+   * @param[in] newWorkingDir The new current working directory
+   */
+  bool setWorkingDirectory(const std::string& newWorkingDir) noexcept;
   bool startProcess();
   bool running() const;
   bool write(const ByteArray& data);
@@ -34,6 +39,7 @@ private:
   boost::process::async_pipe m_asyncOut;
   boost::asio::streambuf m_inbuf;
   boost::asio::streambuf m_outbuf;
+  std::string m_newWorkingDirectory;
 };
 
 #endif // CLANGD_HELPER_H

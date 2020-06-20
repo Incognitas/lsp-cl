@@ -1,6 +1,7 @@
-#include "clangd_helper.h"
+#include "lspfs/clangd_helper.h"
 #include <boost/bind.hpp>
 #include <boost/regex.hpp>
+#include <filesystem>
 #include <iostream>
 
 bool
@@ -15,21 +16,20 @@ ClangdHelper::ClangdHelper()
 {
 }
 
-// struct MatchCond
-//{
-//  MatchCond() = default;
-//
-//  template<typename Iterator>
-//  std::pair<Iterator, bool> operator()(Iterator begin, Iterator end) const
-//  {
-//    const bool retval = std::regex_match(
-//      std::string{ begin, end }, MatchCond::ms_regex, std::regex::icase);
-//    return std::make_pair(end, retval);
-//  }
-//
-// private:
-//  inline static std::regex ms_regex{ "^.*?Starting LSP.*$" };
-//};
+bool
+ClangdHelper::setWorkingDirectory(const std::string& newWorkingDir) noexcept
+{
+  const std::filesystem::path fullPath{ std::filesystem::absolute(
+    newWorkingDir) };
+
+  if( std::filesystem::exists(fullPath) )
+  {
+    this->m_newWorkingDirectory = fullPath.string();
+    return true;
+  }
+
+  return false;
+}
 
 bool
 ClangdHelper::startProcess()
@@ -37,6 +37,7 @@ ClangdHelper::startProcess()
 
   this->m_childProcess = boost::process::child(
     "clangd.exe",
+    boost::process::start_dir(this->m_newWorkingDirectory ),
     boost::process::std_out > this->m_asyncOut,
     boost::process::std_in<this->m_asyncIn, boost::process::std_err> this
       ->m_asyncOut,
@@ -47,7 +48,7 @@ ClangdHelper::startProcess()
   boost::asio::async_read_until(
     this->m_asyncOut,
     this->m_outbuf,
-    /*MatchCond{}*/ boost::regex{ "^.*?Starting LSP.*$" },
+    boost::regex{ "^.*?Starting LSP.*$" },
     boost::bind(&ClangdHelper::handle_banner, this, _1, _2));
 
   std::thread t{ [this] { this->m_ios.run(); } };
