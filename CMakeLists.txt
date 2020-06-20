@@ -8,14 +8,17 @@ conan_basic_setup(TARGETS)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(TARGET_NAME sandbox)
+set(TARGET_NAME lsp_ref)
 
-# create the main executable that will be used for testing
-add_executable(${TARGET_NAME} main.cpp
-clangd_helper.cpp
-)
-
+add_library(${TARGET_NAME} clangd_helper.cpp )
 set_property(TARGET ${TARGET_NAME} PROPERTY CXX_STANDARD 17)
 
-target_link_libraries(${TARGET_NAME} PRIVATE CONAN_PKG::boost CONAN_PKG::nlohmann_json)
+target_link_libraries(${TARGET_NAME} PUBLIC CONAN_PKG::boost CONAN_PKG::nlohmann_json)
+
+# create the main executable that will be used for testing
+set(TARGET_NAME sandbox)
+
+add_executable(${TARGET_NAME} main.cpp)
+
+target_link_libraries(${TARGET_NAME} PRIVATE $<TARGET_FILE:lsp_ref> CONAN_PKG::boost)
 

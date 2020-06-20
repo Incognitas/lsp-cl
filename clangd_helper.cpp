@@ -12,7 +12,8 @@ ClangdHelper::running() const
 ClangdHelper::ClangdHelper()
   : m_asyncIn(m_ios)
   , m_asyncOut(m_ios)
-{}
+{
+}
 
 // struct MatchCond
 //{
@@ -57,7 +58,6 @@ ClangdHelper::startProcess()
 }
 
 bool
-
 ClangdHelper::write(const ByteArray& data)
 {
   std::ostream os(&this->m_inbuf);
@@ -74,12 +74,15 @@ ClangdHelper::handle_banner(const boost::system::error_code& ec,
                             size_t length) const
 {
   std::cout << "Banner length read:" << length << "\n";
-  if (!ec) {
+  if (!ec)
+  {
     /*std::cout << "Banner : "
               << std::string{ boost::asio::buffers_begin(this->m_outbuf.data()),
        boost::asio::buffers_end(this->m_outbuf.data()) }
               << std::endl;*/
-  } else {
+  }
+  else
+  {
     std::cerr << ec.message() << std::endl;
   }
 }
@@ -87,9 +90,12 @@ ClangdHelper::handle_banner(const boost::system::error_code& ec,
 void
 ClangdHelper::handle_write(const boost::system::error_code ec)
 {
-  if (!ec) {
+  if (!ec)
+  {
     this->read();
-  } else {
+  }
+  else
+  {
     std::cerr << "Error occurred when writing content: " << ec.message()
               << "\n";
   }
@@ -109,7 +115,8 @@ void
 ClangdHelper::handle_header(const boost::system::error_code ec)
 {
   static size_t content_length_to_read;
-  if (!ec) {
+  if (!ec)
+  {
     std::string method;
     char sp1, sp2, cr, lf;
     std::istream is(&this->m_outbuf);
@@ -117,7 +124,8 @@ ClangdHelper::handle_header(const boost::system::error_code ec)
     // we are expecting a header at this point
     // if we have reached directly '\r' then this means that next reading will
     // be the content length
-    if (is.peek() != '\r') {
+    if (is.peek() != '\r')
+    {
       // handle header from here
       is >> method >> sp1 >> sp2 >> content_length_to_read >> cr >> lf;
       std::cout << "Received : " << method << " >> " << content_length_to_read;
@@ -127,14 +135,18 @@ ClangdHelper::handle_header(const boost::system::error_code ec)
         this->m_outbuf,
         "\r\n",
         boost::bind(&ClangdHelper::handle_header, this, _1));
-    } else {
+    }
+    else
+    {
       boost::asio::async_read(
         this->m_asyncOut,
         this->m_outbuf,
         boost::asio::transfer_exactly(content_length_to_read),
         boost::bind(&ClangdHelper::handle_content, this, _1));
     }
-  } else {
+  }
+  else
+  {
     std::cerr << "Error occurred when reading content: " << ec.message()
               << "\n";
   }
@@ -143,10 +155,13 @@ ClangdHelper::handle_header(const boost::system::error_code ec)
 void
 ClangdHelper::handle_content(const boost::system::error_code ec)
 {
-  if (!ec) {
+  if (!ec)
+  {
     // now at this point we shall have pure json object
     std::cout << "Content to read !" << std::endl;
-  } else {
+  }
+  else
+  {
     std::cerr << "Error occurred when reading content: " << ec.message()
               << "\n";
   }
