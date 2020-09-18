@@ -1,5 +1,7 @@
 ﻿---
 BasedOnStyle: Mozilla
 BreakBeforeBraces: Allman
+ColumnLimit: '100'
+TabWidth: '4'
 
 ...

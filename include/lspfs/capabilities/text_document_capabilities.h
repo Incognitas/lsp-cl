@@ -1,0 +1,9 @@
+#ifndef TEXTDOCUMENT_CAPABILITIES_H
+#define TEXTDOCUMENT_CAPABILITIES_H
+
+class TextDocumentCapabilities
+{
+  // TODO
+};
+
+#endif // TEXTDOCUMENT_CAPABILITIES_H
