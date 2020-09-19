@@ -66,14 +66,13 @@ ClangdHelper::startProcess()
     this->m_asyncErr,
     this->m_errbuf,
     boost::asio::transfer_at_least(1),
-    //boost::regex{ "^.*?Starting LSP.*$" },
     boost::bind(&ClangdHelper::handle_stderr_messages, this, _1, _2));
 
   std::thread t{ [this] {
     while (this->running())
     {
       this->m_ios.run();
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      //std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
   } };
   t.detach();
@@ -150,55 +149,44 @@ ClangdHelper::handle_write(const boost::system::error_code& ec, size_t length)
 void
 ClangdHelper::read()
 {
-  /*boost::asio::async_read_until(
-    this->m_asyncOut,
-    this->m_outbuf,
-    R"(^.*?Content-Length:\s*\d+$)",
-    boost::bind(&ClangdHelper::handle_header, this, _1));*/
-
-  /*boost::asio::async_read(this->m_asyncErr,
-                          this->m_errbuf,
-                          boost::bind(&ClangdHelper::handle_stderr_messages, this, _1, _2));*/
-
-  boost::asio::async_read(this->m_asyncOut,
-                            this->m_outbuf, 
-      //"Content-Length: \\d+",
-                            boost::bind(&ClangdHelper::handle_header, this, _1));
+  boost::asio::async_read_until(this->m_asyncOut,
+                                this->m_outbuf,
+                                boost::regex("\r\n"),
+                                boost::bind(&ClangdHelper::handle_content_length,
+                                            this,
+                                            boost::asio::placeholders::error,
+                                            boost::asio::placeholders::bytes_transferred));
 
 
 }
 
 void
-ClangdHelper::handle_header(const boost::system::error_code ec)
+ClangdHelper::handle_content_length(const boost::system::error_code& ec, size_t bytes_transferred)
 {
-  std::cerr << "plop" << std::endl;
   if (!ec)
-  { /*
+  { 
     size_t content_length_to_read;
-    std::string method;
-    char sp1, sp2, cr, lf;
+    std::string content_header;
+    
+    
     std::istream is(&this->m_outbuf);
 
-    // TODO :handle content length
-    // we are expecting a header at this point
-    // this means that next reading will be the content length
+    // read total content length
+    is >> content_header >> content_length_to_read;
+    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
+              << std::endl;
+    std::cerr << __FUNCTION__ << ":  total length : " << content_length_to_read << std::endl;
+    this->m_outbuf.consume(2);
     
-      //std::cout << method << std::endl;
-      // handle header from here
-      is >> method >> sp1 >> sp2 >> content_length_to_read >> cr >> lf;
-      std::cout << "Received : " << method << " >> " << content_length_to_read << std::endl;
-
-      // read full content
-      std::cout << "[other] received...";
-      boost::asio::async_read(this->m_asyncOut,
-                              this->m_outbuf,
-                              boost::asio::transfer_exactly(content_length_to_read),
-                              boost::bind(&ClangdHelper::handle_content, this, _1)); 
-    
-   
-      */
-      
-    
+    // read full content
+    boost::asio::async_read_until(this->m_asyncOut,
+                                  this->m_outbuf,
+                                  boost::regex("\r\n"),
+                                  boost::bind(&ClangdHelper::handle_content_type,
+                                              this,
+                                              content_length_to_read,
+                                              boost::asio::placeholders::error,
+                                              boost::asio::placeholders::bytes_transferred));
   }
   else
   {
@@ -208,12 +196,52 @@ ClangdHelper::handle_header(const boost::system::error_code ec)
 }
 
 void
-ClangdHelper::handle_content(const boost::system::error_code ec)
+ClangdHelper::handle_content_type(const size_t expectedContentLengthToReadAfter,
+                                  const boost::system::error_code& ec,
+                                  size_t bytes_transferred)
+{
+  if (!ec)
+  {
+    // ignore this particular value for now (the content type)
+    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
+              << std::endl;
+    std::cerr << __FUNCTION__ << " - " << expectedContentLengthToReadAfter << " - "
+              << m_outbuf.size() << std::endl;
+      
+    // remove bytes read for current reading
+    this->m_outbuf.consume(bytes_transferred); 
+
+    // read the actuel content from now
+    boost::asio::async_read(
+      this->m_asyncOut,
+      this->m_outbuf,
+      // as we used async_read_until(...) before, we may have already more data that expected in the
+      // buffer so we must substract the already obtained size to the total size to read
+      boost::asio::transfer_exactly(expectedContentLengthToReadAfter - m_outbuf.size()),
+      boost::bind(&ClangdHelper::handle_content,
+                  this,
+                  boost::asio::placeholders::error,
+                  boost::asio::placeholders::bytes_transferred));
+  }
+  else
+  {
+    std::cerr << "Error occurred when reading content: " << ec.message() << std::endl;
+  }
+}
+
+void
+ClangdHelper::handle_content(const boost::system::error_code& ec, size_t bytes_transferred)
 {
   if (!ec)
   {
     // now at this point we shall have pure json object
-    std::cout << "Content to read !" << std::endl;
+    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred << std::endl;
+    const std::string fullContent{ boost::asio::buffers_begin(this->m_outbuf.data()),
+                             boost::asio::buffers_end(this->m_outbuf.data()) };
+
+    std::cout << fullContent
+              << std::endl;
+    std::cout << "Size : " << fullContent.size() << std::endl;
   }
   else
   {

@@ -32,8 +32,12 @@ public:
   
 private:
   void handle_stderr_messages(const boost::system::error_code& ec, size_t);
-  void handle_header(const boost::system::error_code ec);
-  void handle_content(const boost::system::error_code ec);
+  void handle_content_length(const boost::system::error_code& ec, size_t );
+  void handle_content_type(const size_t expectedContentLengthToReadAfter,
+                           const boost::system::error_code& ec,
+                           size_t);
+  
+  void handle_content(const boost::system::error_code& ec, size_t);
   void handle_write(const boost::system::error_code& ec, size_t);
 
   boost::process::child m_childProcess;
