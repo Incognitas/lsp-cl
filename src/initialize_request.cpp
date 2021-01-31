@@ -16,33 +16,35 @@ InitializeRequestMessage::methodName() const
 }
 
 /**
- * See https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize for details on this content
+ * See
+ * https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialize
+ * for details on this content
  * @return the serialized parameters
  */
 void
 InitializeRequestMessage::serializeParameters(nlohmann::json& content) const
 {
-    nlohmann::json& parameters = content[JsonRpcAbstractMessage::PARAMS_ATTRIBUTE];
+  nlohmann::json& parameters = content[JsonRpcAbstractMessage::PARAMS_ATTRIBUTE];
 
+  // first the process Id, mandatory field
+  parameters["processId"] = (this->m_processId != 0) ? this->m_processId : nlohmann::json{};
 
-    // first the process Id, mandatory field
-    parameters["processId"] = (this->m_processId != 0) ? this->m_processId : nlohmann::json{};
+  if (this->m_clientInfo)
+  {
+    parameters["clientInfo"] = this->m_clientInfo;
+  }
 
-    if ( this->m_clientInfo )
-    {
-      parameters["clientInfo"] = this->m_clientInfo;
-    }
+  parameters["rootUri"] = this->m_rootUri;
 
-    parameters["rootUri"] = this->m_rootUri;
+  parameters["capabilities"] =
+    this->m_clientCapabilities; // we MUST have proper client capabilities
 
-    parameters["capabilities"] = this->m_clientCapabilities; // we MUST have proper client capabilities
-    
-    parameters["trace"] =  this->m_trace;
+  parameters["trace"] = this->m_trace;
 
-    if( this->m_workspaceFolders.size())
-    {
-      parameters["workspaceFolders"] = this->m_workspaceFolders;
-    }
+  if (this->m_workspaceFolders.size())
+  {
+    parameters["workspaceFolders"] = this->m_workspaceFolders;
+  }
 }
 
 std::ostream&

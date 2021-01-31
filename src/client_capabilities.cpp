@@ -1,4 +1,4 @@
-#include "client_capabilities.h"
+#include <lspfs/capabilities/client_capabilities.h>
 
 // see https://microsoft.github.io/language-server-protocol/specifications/specification-current with ClientCapabilities for more info
 

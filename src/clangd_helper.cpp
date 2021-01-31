@@ -3,6 +3,7 @@
 #include <boost/regex.hpp>
 #include <filesystem>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 bool
 ClangdHelper::running() const
@@ -112,7 +113,7 @@ ClangdHelper::handle_stderr_messages(const boost::system::error_code& ec,
 {
   if (!ec)
   {
-    std::cerr << "Received " << length << " bytes" << std::endl;
+    std::cerr << __FUNCTION__ << " : Received " << length << " bytes" << std::endl;
     std::cout << std::string{ boost::asio::buffers_begin(this->m_errbuf.data()),
                               boost::asio::buffers_end(this->m_errbuf.data()) };
 
@@ -173,9 +174,9 @@ ClangdHelper::handle_content_length(const boost::system::error_code& ec, size_t 
 
     // read total content length
     is >> content_header >> content_length_to_read;
-    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
+    /*std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
               << std::endl;
-    std::cerr << __FUNCTION__ << ":  total length : " << content_length_to_read << std::endl;
+    std::cerr << __FUNCTION__ << ":  total length : " << content_length_to_read << std::endl;*/
     this->m_outbuf.consume(2);
     
     // read full content
@@ -203,10 +204,10 @@ ClangdHelper::handle_content_type(const size_t expectedContentLengthToReadAfter,
   if (!ec)
   {
     // ignore this particular value for now (the content type)
-    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
+    /*std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred
               << std::endl;
     std::cerr << __FUNCTION__ << " - " << expectedContentLengthToReadAfter << " - "
-              << m_outbuf.size() << std::endl;
+              << m_outbuf.size() << std::endl;*/
       
     // remove bytes read for current reading
     this->m_outbuf.consume(bytes_transferred); 
@@ -235,11 +236,14 @@ ClangdHelper::handle_content(const boost::system::error_code& ec, size_t bytes_t
   if (!ec)
   {
     // now at this point we shall have pure json object
-    std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred << std::endl;
+    //std::cout << __FUNCTION__ << " : actual content bytes transferred :" << bytes_transferred << std::endl;
     const std::string fullContent{ boost::asio::buffers_begin(this->m_outbuf.data()),
                              boost::asio::buffers_end(this->m_outbuf.data()) };
 
-    std::cout << fullContent
+    
+    nlohmann::json j{nlohmann::json::parse(fullContent)};
+    
+    std::cout << j.dump(1)
               << std::endl;
     std::cout << "Size : " << fullContent.size() << std::endl;
   }
